@@ -1,0 +1,8 @@
+[
+    {"id":1, "title":"Ford Ranger", "description":"4X4", "price":17000, "thumbnail":"img2.jpg", "code":"tec236", "stock":10},
+    {"id":2, "title":"Ford Maverick", "description":"4X4", "price":20000, "thumbnail":"img3.jpg", "code":"dpi555", "stock":9},
+    {"id":3, "title":"Ford Transit", "description":"4X2", "price":22000, "thumbnail":"img7.jpg", "code":"lil183", "stock":3},
+    {"id":4, "title": "Ford F-150", "description": "4X4", "price":25000, "thumbnail":"img8.jpg", "code": "aad365", "stock":7},
+    {"id":5, "title": "Ford Kuga", "description": "4X4", "price": 300000, "thumbnail":"img6.jpg", "code":"aJh443", "stock":4},
+    {"id":6, "title": "Ford Mustang", "description": "4X4", "price":40000, "thumbnail":"img4.jpg", "code": "bfA398", "stock":5}
+    ]
