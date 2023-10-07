@@ -1,33 +1,38 @@
-import express from "express";
-import { engine } from 'express-handlebars';
-import { __dirname } from "./utils.js";
-import path from "path";
+import express, { urlencoded } from "express";
+import router from "./routes/index.js";
+import handlebars from "express-handlebars";
+import __dirname from './utils.js';
+import http from 'http';
+import { Server } from "socket.io";
 
-import { viewsRouter } from "./routes/views.routes.js";
-import { productsRouter } from "./routes/products.routes.js";
-import { cartsRouter } from "./routes/carts.routes.js";
-
-
-//Servidor express
 const app = express();
-const port = 8080;
-app.use(express.urlencoded({extended:true}));
-app.listen(port, ()=> console.log(`Servidor ejecutándose en el puerto ${port}`));
+const server = http.createServer(app);
+const io = new Server(server);
+const PORT = 8080;
 
-//Middelware para parseo de json
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(urlencoded({extended: true}));
 
-//Middelware carpeta public
-app.use(express.static(path.join(__dirname,"/public")));
+app.use(express.static(__dirname + '/public'));
 
-//Vonfiguracion del motor de plantillas
-app.engine('.hbs', engine({extname: '.hbs'}));
-app.set('view engine', '.hbs');
-app.set('views', path.join(__dirname,"/views")); //=> /src/views
+app.engine('handlebars', handlebars.engine());
+app.set('views', __dirname + '/views');
+app.set('view engine', 'handlebars');
 
 
-//Routes
-app.use("/" , viewsRouter) // Vistas de handlebars
-app.use ("/api/products", productsRouter);
-app.use ("/api/carts", cartsRouter);
+app.use('/', router);
+
+io.on('connection', socket => {
+    console.log('Nuevo cliente conectado');
+    socket.on('disconnect', () => {
+        console.log('Un cliente se ha desconectado');
+    });
+});
+
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+});
+
+export function getIO() {
+    return io;
+}

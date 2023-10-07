@@ -1,69 +1,62 @@
 import { Router } from "express";
-import { productManager } from "../managers/index.js";
+import ProductManager from "../controllers/product.controller.js";
+import { getIO } from "../app.js";
 
 const router = Router();
+const manager = new ProductManager('./src/data/products.json');
 
-// req.query: permite establecer un limite de productos a mostrar. Ej:   http://localhost:8080/products/?limit=4
-router.get("/", async (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const products = await productManager.getProducts();
-        const limit = parseInt(req.query.limit);
+        const { limit } = req.query;
+        let products = await manager.getProducts();
         if (limit) {
-            const productsLimit = products.slice(0, limit);
-            res.send(productsLimit);
-        } else {
-            res.send(products);
+            let newProducts = products.slice(0, limit);
+            products = newProducts;
         }
-
+        res.send({status: "success", payload: products });
     } catch (error) {
-        res.send(error);
+        res.status(500).json({ error: `Ocurrió un error en el servidor: ${error}` });
     }
+});
 
-})
-
-// req.params: permite buscar un producto por su ID. Ej: http://localhost:8080/products/2
-router.get("/:pid", async (req, res) => {
+router.post('/', async (req, res) => {
     try {
-        const productById = parseInt(req.params.pid);
-        const product = await productManager.getPtoductById(productById);
-        res.send(product);
+        let productToAdd = req.body;
+        if (!('status' in productToAdd)) {
+            productToAdd.status = true;
+        }
+        let status = await manager.addProduct(productToAdd);
+        const io = getIO();
+        io.emit('newProduct', status.product);
+        res.status(status.code).json({status: status.status})
     } catch (error) {
-        res.send(error.menssage);
+        res.status(500).json({ error: `Ocurrió un error en el servidor: ${error}` });
     }
+});
 
+router.get('/:pid', async (req, res) => {
+    const { pid } = req.params;
+    const product = await manager.getProductById(parseInt(pid));
+    if(product) {
+        res.send({status: "success", payload: product });
+    } else {
+        res.status(404).json({'error': 'Producto no encontrado'});
+    }
+});
+
+router.put('/:pid', async (req, res) => {
+    const {pid} = req.params;
+    let productToUpdate = req.body;
+    let status = await manager.updateProduct(parseInt(pid), productToUpdate);
+    res.status(status.code).json({status: status.status});
 })
 
+router.delete('/:pid', async (req, res) => {
+  const { pid } = req.params;
+  const status = await manager.deleteProductById(parseInt(pid));
+  const io = getIO();
+  io.emit('deleteProduct', pid);
+  res.status(status.code).json({ status: status.status });
+});
 
-router.post("/", async (req, res) => {
-    try {
-        const product = req.body;
-        const newProduct = await productManager.addProduct(product);
-        res.send(newProduct);
-    } catch (error) {
-        res.send(error.menssage);
-    }
-})
-
-
-router.put("/:pid", async (req, res) => {
-    try {
-        const productId = parseInt(req.params.pid);
-        const data = req.body;
-        await productManager.updateProduct(productId, data);
-        res.send("Endpoint para modificar productos\n (ver información en consola)");
-    } catch (error) {
-        res.send(error.menssage);
-    }
-})
-
-router.delete("/:pid", async (req, res) => {
-    try {
-        const productId = parseInt(req.params.pid);
-        await productManager.deleteProduct(productId);
-        res.send("Endpoint para eliminar productos\n (ver información en consola)");
-    } catch (error) {
-        res.send(error.menssage);
-    }
-})
-
-export { router as productsRouter };
+export default router;

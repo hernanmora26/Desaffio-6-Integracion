@@ -1,49 +1,36 @@
 import { Router } from "express";
-import { productManager, cartManager } from "../managers/index.js"
+import CartManager from "../controllers/cart.controller.js";
 
 const router = Router();
+const manager = new CartManager('./src/data/cart.json');
 
-router.get("/", async(req, res)=> {
+router.post('/', async (req, res) => {
     try {
-        const carts = await cartManager.getCarts();
-        res.json({message: "Listado de carritos", data:carts});
+        let status = await manager.addCart();
+        res.status(status.code).json({status: status.status});
     } catch (error) {
-        res.json({status:"error",message:error.message});
+        res.status(500).json({ error: `Ocurrió un error en el servidor: ${error}` });
     }
 })
 
-router.get("/:cid", async(req, res)=> {
+router.get('/:cid', async (req, res) => {
+    const { cid } = req.params;
+    const cartProducts = await manager.getProductsOfCartById(parseInt(cid));
+    if(cartProducts) {
+      res.send({status: "success", payload: cartProducts });
+    }else {
+      res.status(404).json({'error': 'Carrito no encontrado'});
+    }
+});
+
+router.post('/:cid/product/:pid', async (req, res) => {
     try {
-        const cartId = parseInt(req.params.cid);
-        const cart = await cartManager.getCartsById(cartId);
-        res.json({message:"Buscando carrito..", data: cart})
-    
+        const { cid, pid } = req.params;
+        let status = await manager.addProductToCart(parseInt(cid), parseInt(pid));
+        res.status(status.code).json({status: status.status});
     } catch (error) {
-        res.json({status:"error", message:error.message});
+        res.status(500).json({ error: `Ocurrió un error en el servidor: ${error}` });
     }
 })
 
-router.post("/", async(req, res)=> {
-    try {
-        const newCart = await cartManager.addCart();
-        res.json({message:"Carrito agregado", data: newCart});
-    } catch (error) {
-        res.json({status:"error", message:error.message});
-    }
-})
-
-router.post("/:cid/product/:pid", async (req, res)=> {
-    try {
-        const cartId = parseInt(req.params.cid);
-        const productId = parseInt(req.params.pid);
-        const productToCart = await cartManager.addProductToCart(cartId, productId);
-        res.json({message: "Agregando producto al carrito...", data: productToCart});   
-
-    } catch (error) {
-        res.json({status:"error",message:error.message});
-    }
-    })
-
-
-
-export { router as cartsRouter };
+export default router;
