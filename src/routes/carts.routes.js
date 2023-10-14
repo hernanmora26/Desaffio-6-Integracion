@@ -1,5 +1,5 @@
 import { Router } from "express";
-import CartManager from "../controllers/cart.controller.js";
+import CartManager from "../services/db/cart.service.js";
 
 const router = Router();
 const manager = new CartManager('./src/data/cart.json');
@@ -15,7 +15,7 @@ router.post('/', async (req, res) => {
 
 router.get('/:cid', async (req, res) => {
     const { cid } = req.params;
-    const cartProducts = await manager.getProductsOfCartById(parseInt(cid));
+    const cartProducts = await manager.getProductsOfCartById(cid);
     if(cartProducts) {
       res.send({status: "success", payload: cartProducts });
     }else {
@@ -26,7 +26,7 @@ router.get('/:cid', async (req, res) => {
 router.post('/:cid/product/:pid', async (req, res) => {
     try {
         const { cid, pid } = req.params;
-        let status = await manager.addProductToCart(parseInt(cid), parseInt(pid));
+        let status = await manager.addProductToCart((cid), (pid));
         res.status(status.code).json({status: status.status});
     } catch (error) {
         res.status(500).json({ error: `Ocurrió un error en el servidor: ${error}` });
